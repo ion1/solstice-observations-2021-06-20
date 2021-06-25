@@ -1,4 +1,13 @@
-<h1>Welcome to SvelteKit</h1>
-<p>
-  Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation
-</p>
+<script context="module" type="ts">
+  export const router = false;
+</script>
+
+<script type="ts">
+  import Diagram from "$lib/Diagram.svelte";
+</script>
+
+<svelte:head>
+  <title>A Visualization of the 2021 Solstice Observations</title>
+</svelte:head>
+
+<Diagram />
