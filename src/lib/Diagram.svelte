@@ -108,6 +108,21 @@
     ].join(" ");
   }
 
+  function latitudeTextPosition(surf: d.SurfaceAt): string {
+    const latitudeTextDistance = 0.1;
+    const x = surf.point.x - surf.normal.x * latitudeTextDistance;
+    const y = surf.point.y - surf.normal.y * latitudeTextDistance;
+    return `translate(${x} ${y})`;
+  }
+
+  function latitudeText(latitude: number): string {
+    return [
+      Math.abs(latitude),
+      "°",
+      ["S", "", "N"][Math.sign(latitude) + 1],
+    ].join("");
+  }
+
   function observationPath(surf: d.SurfaceAt, obs: Observation): string {
     const normal = d.rotate(surf.normal, obs.angle - 0.5 * Math.PI);
     const length = 10;
@@ -149,6 +164,13 @@
 
       {#each tickLatitudes as latitude}
         <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
+        <g
+          transform={`${latitudeTextPosition(
+            earth.surfaceAt(latitude)
+          )} scale(1 -1)`}
+        >
+          <text class="latitude">{latitudeText(latitude)}</text>
+        </g>
       {/each}
 
       {#each observations as obs}
@@ -186,6 +208,11 @@
 
   svg * {
     vector-effect: non-scaling-stroke;
+    touch-action: none;
+  }
+
+  text {
+    user-select: none;
   }
 
   circle,
@@ -198,6 +225,13 @@
 
   .tick {
     stroke-width: 1px;
+  }
+
+  .latitude {
+    font: 0.035px sans-serif;
+    fill: var(--foreground-color);
+    text-anchor: middle;
+    dominant-baseline: middle;
   }
 
   .observation {
