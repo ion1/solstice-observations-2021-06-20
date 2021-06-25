@@ -1,16 +1,80 @@
 <script type="ts">
   import { onMount } from "svelte";
+  import { tweened } from "svelte/motion";
+  import { cubicOut as easing } from "svelte/easing";
 
   import observations from "./observations";
   import type { Observation } from "./observations";
   import * as d from "./diagram";
+  import draggableSvg from "./draggableSvg";
 
-  let time: number = 0.0;
+  let shape = tweened(0, {
+    duration: 100,
+    easing,
+  });
+  let shapeTarget = 0;
 
-  let width = 0;
-  let height = 0;
+  let dragging = false;
+  let shapeBeforeDrag = shapeTarget;
+  let dragOrigin = 0;
+  const dragScale = -3;
+  const dragSnapOffset = 0.1;
 
-  $: earth = d.computeParameters(0.5 + 0.5 * Math.sin(0.2 * time));
+  function applyDrag(position: number): void {
+    const deltaUnclamped = position - dragOrigin;
+    const delta = clamp(
+      deltaUnclamped,
+      -1.0 / Math.abs(dragScale),
+      1.0 / Math.abs(dragScale)
+    );
+    dragOrigin += deltaUnclamped - delta;
+
+    shapeTarget = dragScale * delta;
+    shape.set(shapeTarget, { duration: 0 });
+  }
+
+  function stopMotion() {
+    // Set the current value as the target and stop motion.
+    shapeTarget = $shape;
+    shape.set(shapeTarget, { duration: 0 });
+  }
+
+  function clamp(n: number, min: number, max: number): number {
+    return Math.min(Math.max(n, min), max);
+  }
+
+  function handleDragstart(event: CustomEvent<SvgdragstartData>): void {
+    event.preventDefault();
+    dragging = true;
+    stopMotion();
+    shapeBeforeDrag = shapeTarget;
+    dragOrigin = event.detail.position.y - shapeTarget / dragScale;
+  }
+
+  function handleDragmove(event: CustomEvent<SvgdragmoveData>): void {
+    applyDrag(event.detail.position.y);
+  }
+
+  function handleDragend(event: CustomEvent<SvgdragendData>): void {
+    dragging = false;
+    applyDrag(event.detail.position.y);
+
+    if (Math.abs(shapeTarget) < dragSnapOffset) {
+      shapeTarget = 0;
+      shape.set(shapeTarget);
+    } else if (Math.abs(shapeTarget) > 1 - dragSnapOffset) {
+      shapeTarget = Math.sign(shapeTarget) * 1;
+      shape.set(shapeTarget);
+    }
+  }
+
+  function handleDragcancel(event: CustomEvent<SvgdragcancelData>): void {
+    dragging = false;
+    shapeTarget = shapeBeforeDrag;
+    shape.set(shapeTarget);
+  }
+
+  $: earth = d.computeParameters($shape);
 
   function surfacePath(earth: d.EarthParams): string {
     const north = earth.surfaceAt(90);
@@ -53,39 +117,24 @@
       `l ${normal.x * length} ${normal.y * length}`,
     ].join(" ");
   }
-
-  let request: number;
-  onMount(() => {
-    let prevNow = performance.now();
-    (function loop() {
-      request = requestAnimationFrame(loop);
-      const now = performance.now();
-      const dt = (now - prevNow) / 1000;
-      prevNow = now;
-      time += dt;
-      // render(time);
-    })();
-    return () => {
-      cancelAnimationFrame(request);
-    };
-  });
 </script>
 
-<div
-  class="diagram-container"
-  bind:clientWidth={width}
-  bind:clientHeight={height}
->
-  <svg viewBox="-100 -100 200 200" preserveAspectRatio="xMidYMax meet">
+<div class="diagram-container">
+  <svg
+    viewBox="-1.2 -1.2 2.4 2.4"
+    preserveAspectRatio="xMidYMax meet"
+    use:draggableSvg
+    on:svgdragstart={handleDragstart}
+    on:svgdragmove={handleDragmove}
+    on:svgdragend={handleDragend}
+    on:svgdragcancel={handleDragcancel}
+    class:dragging
+  >
     <!--
-      <path d="M -100 -100 H 100 V 100 H -100 Z" style="stroke-width: 0.1px" />
+      <path d="M -1.2 -1.2 H 1.2 V 1.2 H -1.2 Z" style="stroke-width: 0.1px" />
     -->
-    <g transform="scale(1 -1)">
-      <g
-        transform="translate(0 -70) scale(80) translate(0 {-0.5 *
-          earth.height})"
-      >
-        <!--
+    <g transform="scale(1 -1) translate(0 -0.6)">
+      <!--
         {#if earth.type === d.CURVED}
           <circle
             class="debug"
@@ -96,22 +145,21 @@
         {/if}
         -->
 
-        <path class="surface" d={surfacePath(earth)} />
+      <path class="surface" d={surfacePath(earth)} />
 
-        {#each tickLatitudes as latitude}
-          <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
-        {/each}
+      {#each tickLatitudes as latitude}
+        <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
+      {/each}
 
-        {#each observations as observation}
-          <path
-            class="observation"
-            d={observationPath(
-              earth.surfaceAt(observation.latitude),
-              observation
-            )}
-          />
-        {/each}
-      </g>
+      {#each observations as observation}
+        <path
+          class="observation"
+          d={observationPath(
+            earth.surfaceAt(observation.latitude),
+            observation
+          )}
+        />
+      {/each}
     </g>
   </svg>
 </div>
@@ -129,6 +177,13 @@
     overflow: visible;
     width: 100%;
     height: 100%;
+    cursor: move;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .dragging {
+    cursor: grabbing;
   }
 
   svg * {

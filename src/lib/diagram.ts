@@ -69,7 +69,8 @@ export function computeParameters(control: number): EarthParams {
     const earthWidth = circleScale * Math.sin(segmentAngle);
     const earthHeight =
       Math.sign(control) * circleScale * (1 - Math.cos(segmentAngle));
-    const circleOffset = Math.sign(earthHeight) * -circleScale + earthHeight;
+    const circleOffset =
+      Math.sign(earthHeight) * -circleScale + 0.5 * earthHeight;
 
     const surfaceAt = (latitude: number) => {
       const angle =
