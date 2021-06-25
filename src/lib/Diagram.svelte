@@ -151,13 +151,11 @@
         <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
       {/each}
 
-      {#each observations as observation}
+      {#each observations as obs}
         <path
           class="observation"
-          d={observationPath(
-            earth.surfaceAt(observation.latitude),
-            observation
-          )}
+          d={observationPath(earth.surfaceAt(obs.latitude), obs)}
+          stroke-opacity={Math.exp(-0.8 * ((obs.error / Math.PI) * 180 - 0.1))}
         />
       {/each}
     </g>

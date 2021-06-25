@@ -1,6 +1,9 @@
+import regression from "regression";
+
 export type Observation = {
   latitude: number;
   angle: number;
+  error: number;
 };
 
 // https://docs.google.com/spreadsheets/u/1/d/1OmVFSrZ61G57dFkt6UBSnJqvfVJ_vIdHEHPXKk7m1_8/edit?usp=sharing
@@ -41,6 +44,20 @@ const rawObservations = [
   angle: Math.atan2(stickHeight, shadowLength),
 }));
 
-export const observations: Observation[] = rawObservations;
+const fit = regression.linear(
+  rawObservations.map((obs) => [obs.latitude, obs.angle]),
+  { precision: 15 }
+);
+
+export const observations: Observation[] = rawObservations.map((obs) => {
+  const prediction = fit.predict(obs.latitude)[1];
+  // Estimate the error as 50 % more than the difference between the
+  // measurement and the prediction, but at least 0.1 degrees.
+  const error = Math.max(
+    1.5 * Math.abs(obs.angle - prediction),
+    (0.1 / 180) * Math.PI
+  );
+  return { ...obs, error };
+});
 
 export default observations;
