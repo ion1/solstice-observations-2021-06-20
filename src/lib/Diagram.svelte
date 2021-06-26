@@ -11,6 +11,8 @@
 
   let showGrabIndicator = true;
 
+  const diagramScale = 500;
+
   let shape = tweened(0, {
     duration: 100,
     easing,
@@ -20,7 +22,7 @@
   let dragging = false;
   let shapeBeforeDrag = shapeTarget;
   let dragOrigin = 0;
-  const dragScale = -3;
+  const dragScale = -3 / diagramScale;
   const dragSnapOffset = 0.1;
 
   function applyDrag(position: number): void {
@@ -82,20 +84,17 @@
   $: earth = d.computeParameters($shape);
 
   function surfacePath(earth: d.EarthParams): string {
-    const north = earth.surfaceAt(90);
-    const south = earth.surfaceAt(-90);
+    const north = d.scale(earth.surfaceAt(90).point, diagramScale);
+    const south = d.scale(earth.surfaceAt(-90).point, diagramScale);
 
     if (earth.type === d.FLAT) {
-      return [
-        `M ${north.point.x} ${north.point.y}`,
-        `L ${south.point.x} ${south.point.y}`,
-      ].join(" ");
+      return [`M ${north.x} ${north.y}`, `L ${south.x} ${south.y}`].join(" ");
     } else {
-      const r = earth.circleScale;
+      const r = earth.circleScale * diagramScale;
       const sweepFlag = earth.curvatureType === d.CONVEX ? 0 : 1;
       return [
-        `M ${north.point.x} ${north.point.y}`,
-        `A ${r} ${r} 0 0 ${sweepFlag} ${south.point.x} ${south.point.y}`,
+        `M ${north.x} ${north.y}`,
+        `A ${r} ${r} 0 0 ${sweepFlag} ${south.x} ${south.y}`,
       ].join(" ");
     }
   }
@@ -106,18 +105,21 @@
   }
 
   function surfaceTickPath(surf: d.SurfaceAt): string {
-    const tickLength = 0.05;
-    return [
-      `M ${surf.point.x} ${surf.point.y}`,
-      `l ${-surf.normal.x * tickLength} ${-surf.normal.y * tickLength}`,
-    ].join(" ");
+    const tickLength = -0.05;
+
+    const point = d.scale(surf.point, diagramScale);
+    const vector = d.scale(surf.normal, tickLength * diagramScale);
+
+    return [`M ${point.x} ${point.y}`, `l ${vector.x} ${vector.y}`].join(" ");
   }
 
   function latitudeTextPosition(surf: d.SurfaceAt): string {
-    const latitudeTextDistance = 0.1;
-    const x = surf.point.x - surf.normal.x * latitudeTextDistance;
-    const y = surf.point.y - surf.normal.y * latitudeTextDistance;
-    return `translate(${x} ${y})`;
+    const latitudeTextDistance = -0.1;
+
+    const point = d.scale(surf.point, diagramScale);
+    const vector = d.scale(surf.normal, latitudeTextDistance * diagramScale);
+
+    return `translate(${point.x + vector.x} ${point.y + vector.y})`;
   }
 
   function latitudeText(latitude: number): string {
@@ -132,16 +134,16 @@
     const normal = d.rotate(surf.normal, obs.angle - 0.5 * Math.PI);
     const length = 10;
 
-    return [
-      `M ${surf.point.x} ${surf.point.y}`,
-      `l ${normal.x * length} ${normal.y * length}`,
-    ].join(" ");
+    const point = d.scale(surf.point, diagramScale);
+    const vector = d.scale(normal, length * diagramScale);
+
+    return [`M ${point.x} ${point.y}`, `l ${vector.x} ${vector.y}`].join(" ");
   }
 </script>
 
 <div class="diagram-container">
   <svg
-    viewBox="-1.2 -1.2 2.4 2.4"
+    viewBox="-600 -600 1200 1200"
     preserveAspectRatio="xMidYMax meet"
     use:draggableSvg
     on:svgdragstart={handleDragstart}
@@ -151,19 +153,19 @@
     class:dragging
   >
     <!--
-      <path d="M -1.2 -1.2 H 1.2 V 1.2 H -1.2 Z" style="stroke-width: 0.1px" />
+      <path d="M -600 -600 H 600 V 600 H -600 Z" style="stroke-width: 0.1px" />
     -->
-    <g transform="scale(1 -1) translate(0 -0.6)">
+    <g transform="scale(1 -1) translate(0 -300)">
       <!--
         {#if earth.type === d.CURVED}
           <circle
             class="debug"
             cx={0}
-            cy={earth.circleOffset}
-            r={earth.circleScale}
+            cy={earth.circleOffset * diagramScale}
+            r={earth.circleScale * diagramScale}
           />
         {/if}
-        -->
+      -->
 
       <path class="surface" d={surfacePath(earth)} />
 
@@ -251,7 +253,7 @@
   }
 
   .latitude {
-    font: 0.035px sans-serif;
+    font: 17.5px sans-serif;
     fill: var(--foreground-color);
     text-anchor: middle;
     dominant-baseline: middle;

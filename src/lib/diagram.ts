@@ -23,6 +23,13 @@ export type SurfaceAt = {
 };
 export type Coordinate = { x: number; y: number };
 
+export function scale(coord: Coordinate, amount: number): Coordinate {
+  return {
+    x: coord.x * amount,
+    y: coord.y * amount,
+  };
+}
+
 export function rotate(coord: Coordinate, angle: number): Coordinate {
   const c = Math.cos(angle);
   const s = Math.sin(angle);
