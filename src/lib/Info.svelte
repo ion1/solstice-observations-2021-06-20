@@ -68,7 +68,7 @@
     </p>
     <p>
       <a href="https://youtu.be/KXjz16wRUq0"
-        ><LogoYouTube24 /> Solstice Observations Raw Results</a
+        ><LogoYouTube24 class="youtube-logo" />Solstice Observations Raw Results</a
       >
       by <em>I Can Science That</em>
     </p>
@@ -147,5 +147,10 @@
 
   .info :global(svg) {
     vertical-align: bottom;
+  }
+
+  .info :global(.youtube-logo) {
+    color: #f00;
+    margin-right: 0.5ch;
   }
 </style>
