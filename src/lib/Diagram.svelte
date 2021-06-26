@@ -12,6 +12,7 @@
   let showGrabIndicator = true;
 
   const diagramScale = 500;
+  const debug = false;
 
   let shape = tweened(0, {
     duration: 100,
@@ -152,11 +153,11 @@
     on:svgdragcancel={handleDragcancel}
     class:dragging
   >
-    <!--
-      <path d="M -600 -600 H 600 V 600 H -600 Z" style="stroke-width: 0.1px" />
-    -->
+    {#if debug}
+      <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
+    {/if}
     <g transform="scale(1 -1) translate(0 -300)">
-      <!--
+      {#if debug}
         {#if earth.type === d.CURVED}
           <circle
             class="debug"
@@ -165,7 +166,7 @@
             r={earth.circleScale * diagramScale}
           />
         {/if}
-      -->
+      {/if}
 
       <path class="surface" d={surfacePath(earth)} />
 
