@@ -3,7 +3,7 @@
   import { fade, slide } from "svelte/transition";
 
   import Help32 from "carbon-icons-svelte/lib/Help32";
-  import CloseOutline24 from "carbon-icons-svelte/lib/CloseOutline24";
+  import CloseOutline32 from "carbon-icons-svelte/lib/CloseOutline32";
   import LogoYouTube24 from "carbon-icons-svelte/lib/LogoYoutube24";
 
   import { browser } from "$app/env";
@@ -55,7 +55,7 @@
     {#if browser}
       <div class="close-button">
         <button on:click={hideInfo}
-          ><CloseOutline24 title="Close the information box" /></button
+          ><CloseOutline32 title="Close the information box" /></button
         >
       </div>
     {/if}
@@ -98,8 +98,15 @@
     cursor: pointer;
   }
 
-  .info-button {
-    position: absolute;
+  .info-button,
+  .close-button {
+    position: fixed;
+    left: 1.0625rem;
+    top: 1.0625rem;
+    width: 2rem;
+    height: 2rem;
+    overflow: hidden;
+    border-radius: 1rem;
   }
 
   .info-background {
@@ -108,7 +115,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #000c;
+    background-color: #000a;
     cursor: pointer;
   }
 
@@ -116,20 +123,28 @@
     position: absolute;
     top: 0;
     left: 0;
-    margin: 1rem;
-    padding: 1rem;
+    margin: 0 1rem 1rem 0;
+    padding: 0.5rem 1rem 0.75rem 4rem;
+    border-radius: 0 0 0.25rem 0;
+    border-style: none solid solid none;
+    border-width: 0.0625rem;
+    border-color: var(--foreground-color);
     max-width: 40rem;
+  }
+
+  .info-button,
+  .info,
+  .close-button {
     box-shadow: 0.0625rem 0.1875rem 0.625rem #000c;
-    border: 0.0625rem solid var(--foreground-color);
-    border-radius: 0.25rem;
     background-color: var(--background-color);
+  }
+
+  .info h1,
+  .info p {
+    margin-block: 0.5rem;
   }
 
   .info :global(svg) {
     vertical-align: bottom;
-  }
-
-  .close-button {
-    float: right;
   }
 </style>
