@@ -4,6 +4,7 @@
 
 <script type="ts">
   import Diagram from "$lib/Diagram.svelte";
+  import Info from "$lib/Info.svelte";
 </script>
 
 <svelte:head>
@@ -11,3 +12,5 @@
 </svelte:head>
 
 <Diagram />
+
+<Info />
