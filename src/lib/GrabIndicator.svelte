@@ -16,7 +16,7 @@
     width: 4rem;
     height: 4rem;
     opacity: 0;
-    padding-top: 0;
+    will-change: opacity, transform;
     animation-delay: 2s;
     animation-duration: 8s;
     animation-name: wiggle;
@@ -27,42 +27,42 @@
   @keyframes wiggle {
     0% {
       opacity: 0;
-      padding-top: 0;
+      transform: translateY(0);
     }
 
     5% {
       opacity: 1;
-      padding-top: 0;
+      transform: translateY(0);
     }
 
     15% {
       opacity: 1;
-      padding-top: 8rem;
+      transform: translateY(8rem);
     }
 
     25% {
       opacity: 1;
-      padding-top: 0;
+      transform: translateY(0);
     }
 
     35% {
       opacity: 1;
-      padding-top: 8rem;
+      transform: translateY(8rem);
     }
 
     45% {
       opacity: 1;
-      padding-top: 0;
+      transform: translateY(0);
     }
 
     50% {
       opacity: 0;
-      padding-top: 0;
+      transform: translateY(0);
     }
 
     to {
       opacity: 0;
-      padding-top: 0;
+      transform: translateY(0);
     }
   }
 </style>
