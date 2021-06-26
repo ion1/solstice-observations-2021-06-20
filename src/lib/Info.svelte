@@ -62,14 +62,15 @@
 
     <h1>Solstice Observations 2021</h1>
     <p>
-      I Can Science That organized an effort to observe the sun angles at
-      multiple latitudes at solar noon on 2021-06-20. This is an interactive
-      visualization of the resulting data.
+      <em>I Can Science That</em> organized an effort to observe the sun angles at
+      multiple latitudes at solar noon on 2021-06-20. This is an interactive visualization
+      of the resulting data.
     </p>
     <p>
       <a href="https://youtu.be/KXjz16wRUq0"
         ><LogoYouTube24 /> Solstice Observations Raw Results</a
-      > by I Can Science That
+      >
+      by <em>I Can Science That</em>
     </p>
     <p>
       Drag the diagram to change the hypothesis between a hollow Earth, a flat
