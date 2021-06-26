@@ -1,5 +1,6 @@
 <script type="ts">
-  import { onMount } from "svelte";
+  import GrabIndicator from "./GrabIndicator.svelte";
+  import { fade } from "svelte/transition";
   import { tweened } from "svelte/motion";
   import { cubicOut as easing } from "svelte/easing";
 
@@ -7,6 +8,8 @@
   import type { Observation } from "./observations";
   import * as d from "./diagram";
   import draggableSvg from "./draggableSvg";
+
+  let showGrabIndicator = true;
 
   let shape = tweened(0, {
     duration: 100,
@@ -52,6 +55,8 @@
   }
 
   function handleDragmove(event: CustomEvent<SvgdragmoveData>): void {
+    showGrabIndicator = false;
+
     applyDrag(event.detail.position.y);
   }
 
@@ -184,6 +189,12 @@
   </svg>
 </div>
 
+{#if showGrabIndicator}
+  <div class="grab-indicator" transition:fade>
+    <GrabIndicator />
+  </div>
+{/if}
+
 <style>
   .diagram-container {
     position: absolute;
@@ -191,6 +202,18 @@
     top: 0;
     width: 100%;
     height: 100%;
+  }
+
+  .grab-indicator {
+    pointer-events: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
   svg {
