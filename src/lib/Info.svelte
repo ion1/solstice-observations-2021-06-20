@@ -89,7 +89,7 @@
   </div>
 {/if}
 
-<style>
+<style type="scss">
   button {
     background: transparent;
     color: var(--foreground-color);
@@ -108,6 +108,11 @@
     height: 2rem;
     overflow: hidden;
     border-radius: 1rem;
+    border: 0.0625rem solid var(--background-color);
+
+    &:focus-within {
+      border-color: var(--foreground-color);
+    }
   }
 
   .info-background {
