@@ -22,7 +22,7 @@
   let dragging = false;
   let shapeBeforeDrag = shapeTarget;
   let dragOrigin = 0;
-  const dragScale = -3 / diagramScale;
+  const dragScale = -2 / diagramScale;
   const dragSnapOffset = 0.1;
 
   function applyDrag(position: number): void {
