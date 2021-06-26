@@ -8,26 +8,43 @@
 
   import { browser } from "$app/env";
 
+  import { historyStore } from "./historyStore";
+
   // Start with no modal background but the info box shown for static HTML.
-  let backgroundShown = false;
-  let infoShown = true;
+  const infoModal = historyStore("infoModal", false);
+  let infoShownStatic = true;
+  let infoTransitionDuration = 0;
   onMount(() => {
-    infoShown = false;
-    backgroundShown = infoShown;
+    infoShownStatic = false;
+    requestAnimationFrame(() => {
+      infoTransitionDuration = 100;
+    });
   });
-  function toggleInfo() {
-    infoShown = !infoShown;
-    backgroundShown = infoShown;
+
+  function toggleModal() {
+    if ($infoModal) {
+      hideModal();
+    } else {
+      showModal();
+    }
   }
-  function hideInfo() {
-    infoShown = false;
-    backgroundShown = infoShown;
+
+  function showModal() {
+    if (!$infoModal) {
+      infoModal.pushSet(true);
+    }
+  }
+
+  function hideModal() {
+    if ($infoModal) {
+      history.back();
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent): void {
-    if (infoShown && event.key === "Escape") {
+    if ($infoModal && event.key === "Escape") {
       event.preventDefault();
-      hideInfo();
+      hideModal();
     }
   }
 </script>
@@ -36,25 +53,25 @@
 
 {#if browser}
   <div class="info-button">
-    <button on:click={toggleInfo}
+    <button on:click={toggleModal}
       ><Help32 title="Information about this page" /></button
     >
   </div>
 
-  {#if backgroundShown}
+  {#if $infoModal}
     <div
       class="info-background"
-      on:click={hideInfo}
+      on:click={hideModal}
       transition:fade={{ duration: 100 }}
     />
   {/if}
 {/if}
 
-{#if infoShown}
-  <div class="info" transition:slide={{ duration: 100 }}>
+{#if infoShownStatic || $infoModal}
+  <div class="info" transition:slide={{ duration: infoTransitionDuration }}>
     {#if browser}
       <div class="close-button">
-        <button on:click={hideInfo}
+        <button on:click={hideModal}
           ><CloseOutline32 title="Close the information box" /></button
         >
       </div>
