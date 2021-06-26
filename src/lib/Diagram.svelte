@@ -8,8 +8,7 @@
   import type { Observation } from "./observations";
   import * as d from "./diagram";
   import draggableSvg from "./draggableSvg";
-
-  let showGrabIndicator = true;
+  import { onMount } from "svelte";
 
   const diagramScale = 500;
   const debug = false;
@@ -20,6 +19,12 @@
   });
   let shapeTarget = 0;
 
+  let loaded = false;
+  let showGrabIndicator = false;
+  onMount(() => {
+    loaded = true;
+    showGrabIndicator = true;
+  });
   let dragging = false;
   let shapeBeforeDrag = shapeTarget;
   let dragOrigin = 0;
@@ -151,6 +156,8 @@
     on:svgdragmove={handleDragmove}
     on:svgdragend={handleDragend}
     on:svgdragcancel={handleDragcancel}
+    class:loading={!loaded}
+    class:draggable={loaded}
     class:dragging
   >
     {#if debug}
@@ -223,9 +230,16 @@
     overflow: visible;
     width: 100%;
     height: 100%;
+    touch-action: none;
+  }
+
+  .loading {
+    cursor: progress;
+  }
+
+  .draggable {
     cursor: move;
     cursor: grab;
-    touch-action: none;
   }
 
   .dragging {
