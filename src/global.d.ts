@@ -7,9 +7,9 @@ type SvgdragcancelData = { original: DOMPoint; delta: DOMPoint };
 
 declare namespace svelte.JSX {
   export interface SVGProps {
-    onsvgdragstart?: (event: CustomEvent<SvgdragstartEvent>) => void;
-    onsvgdragmove?: (event: CustomEvent<SvgdragmoveEvent>) => void;
-    onsvgdragend?: (event: CustomEvent<SvgdragendEvent>) => void;
-    onsvgdragcancel?: (event: CustomEvent<SvgdragcancelEvent>) => void;
+    onsvgdragstart?: (event: CustomEvent<SvgdragstartData>) => void;
+    onsvgdragmove?: (event: CustomEvent<SvgdragmoveData>) => void;
+    onsvgdragend?: (event: CustomEvent<SvgdragendData>) => void;
+    onsvgdragcancel?: (event: CustomEvent<SvgdragcancelData>) => void;
   }
 }
