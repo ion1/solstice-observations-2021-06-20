@@ -147,57 +147,56 @@
   }
 </script>
 
-<div class="diagram-container">
-  <svg
-    viewBox="-600 -600 1200 1200"
-    preserveAspectRatio="xMidYMax meet"
-    use:draggableSvg
-    on:svgdragstart={handleDragstart}
-    on:svgdragmove={handleDragmove}
-    on:svgdragend={handleDragend}
-    on:svgdragcancel={handleDragcancel}
-    class:loading={!loaded}
-    class:draggable={loaded}
-    class:dragging
-  >
+<svg
+  viewBox="-600 -600 1200 1200"
+  preserveAspectRatio="xMidYMax meet"
+  use:draggableSvg
+  on:svgdragstart={handleDragstart}
+  on:svgdragmove={handleDragmove}
+  on:svgdragend={handleDragend}
+  on:svgdragcancel={handleDragcancel}
+  class="diagram"
+  class:loading={!loaded}
+  class:draggable={loaded}
+  class:dragging
+>
+  {#if debug}
+    <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
+  {/if}
+  <g transform="scale(1 -1) translate(0 -300)">
     {#if debug}
-      <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
-    {/if}
-    <g transform="scale(1 -1) translate(0 -300)">
-      {#if debug}
-        {#if earth.type === d.CURVED}
-          <circle
-            class="debug"
-            cx={0}
-            cy={earth.circleOffset * diagramScale}
-            r={earth.circleScale * diagramScale}
-          />
-        {/if}
-      {/if}
-
-      <path class="surface" d={surfacePath(earth)} />
-
-      {#each tickLatitudes as latitude}
-        <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
-        <g
-          transform={`${latitudeTextPosition(
-            earth.surfaceAt(latitude)
-          )} scale(1 -1)`}
-        >
-          <text class="latitude">{latitudeText(latitude)}</text>
-        </g>
-      {/each}
-
-      {#each observations as obs}
-        <path
-          class="observation"
-          d={observationPath(earth.surfaceAt(obs.latitude), obs)}
-          stroke-opacity={Math.exp(-0.8 * ((obs.error / Math.PI) * 180 - 0.1))}
+      {#if earth.type === d.CURVED}
+        <circle
+          class="debug"
+          cx={0}
+          cy={earth.circleOffset * diagramScale}
+          r={earth.circleScale * diagramScale}
         />
-      {/each}
-    </g>
-  </svg>
-</div>
+      {/if}
+    {/if}
+
+    <path class="surface" d={surfacePath(earth)} />
+
+    {#each tickLatitudes as latitude}
+      <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
+      <g
+        transform={`${latitudeTextPosition(
+          earth.surfaceAt(latitude)
+        )} scale(1 -1)`}
+      >
+        <text class="latitude">{latitudeText(latitude)}</text>
+      </g>
+    {/each}
+
+    {#each observations as obs}
+      <path
+        class="observation"
+        d={observationPath(earth.surfaceAt(obs.latitude), obs)}
+        stroke-opacity={Math.exp(-0.8 * ((obs.error / Math.PI) * 180 - 0.1))}
+      />
+    {/each}
+  </g>
+</svg>
 
 {#if showGrabIndicator}
   <div class="grab-indicator" transition:fade>
@@ -206,12 +205,13 @@
 {/if}
 
 <style>
-  .diagram-container {
+  .diagram {
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
+    overflow: hidden;
   }
 
   .grab-indicator {
