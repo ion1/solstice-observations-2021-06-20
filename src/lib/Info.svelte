@@ -84,10 +84,11 @@
       of the resulting data.
     </p>
     <p>
-      <a href="https://youtu.be/KXjz16wRUq0"
-        ><LogoYouTube24 class="youtube-logo" />Solstice Observations Raw Results</a
+      Please see <a href="https://youtu.be/yDmmhmoixLI"
+        ><LogoYouTube24 class="youtube-logo" />Solstice Observations – An
+        Interactive Display</a
       >
-      by <em>I Can Science That</em>
+      by <em>I Can Science That</em> for further explanation.
     </p>
     <p>
       Drag the diagram to change the hypothesis between a hollow Earth, a flat
