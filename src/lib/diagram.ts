@@ -1,3 +1,5 @@
+import type { Vector } from "vec-la-fp";
+
 export const FLAT = Symbol("flat");
 export const CURVED = Symbol("curved");
 export const CONVEX = Symbol("convex");
@@ -18,26 +20,9 @@ export type CurvedEarthParams = {
   circleOffset: number;
 };
 export type SurfaceAt = {
-  point: Coordinate;
-  normal: Coordinate;
+  point: Vector;
+  normal: Vector;
 };
-export type Coordinate = { x: number; y: number };
-
-export function scale(coord: Coordinate, amount: number): Coordinate {
-  return {
-    x: coord.x * amount,
-    y: coord.y * amount,
-  };
-}
-
-export function rotate(coord: Coordinate, angle: number): Coordinate {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return {
-    x: c * coord.x - s * coord.y,
-    y: s * coord.x + c * coord.y,
-  };
-}
 
 // +1: Globe Earth
 //  0: Flat Earth
@@ -45,9 +30,9 @@ export function rotate(coord: Coordinate, angle: number): Coordinate {
 export function computeParameters(control: number): EarthParams {
   if (Math.abs(control) < 1e-4) {
     // Flat Earth
-    const surfaceAt = (latitude: number) => ({
-      point: { x: -latitude / 90, y: 0 },
-      normal: { x: 0, y: 1 },
+    const surfaceAt: (latitude: number) => SurfaceAt = (latitude) => ({
+      point: [-latitude / 90, 0],
+      normal: [0, 1],
     });
     return { type: FLAT, surfaceAt, width: 1, height: 0 };
   } else {
@@ -79,20 +64,14 @@ export function computeParameters(control: number): EarthParams {
     const circleOffset =
       Math.sign(earthHeight) * -circleScale + 0.5 * earthHeight;
 
-    const surfaceAt = (latitude: number) => {
+    const surfaceAt: (latitude: number) => SurfaceAt = (latitude) => {
       const angle =
         Math.sign(control) * ((latitude / 90) * segmentAngle + 0.5 * Math.PI);
       const cAngle = Math.cos(angle);
       const sAngle = Math.sin(angle);
       return {
-        point: {
-          x: circleScale * cAngle,
-          y: circleOffset + circleScale * sAngle,
-        },
-        normal: {
-          x: Math.sign(control) * cAngle,
-          y: Math.sign(control) * sAngle,
-        },
+        point: [circleScale * cAngle, circleOffset + circleScale * sAngle],
+        normal: [Math.sign(control) * cAngle, Math.sign(control) * sAngle],
       };
     };
 

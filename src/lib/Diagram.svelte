@@ -4,6 +4,9 @@
   import { tweened } from "svelte/motion";
   import { cubicOut as easing } from "svelte/easing";
 
+  import type { Matrix, Vector } from "vec-la-fp";
+  import { vAdd, vRotate, vScale, vTransform } from "vec-la-fp";
+
   import observations from "./observations";
   import type { Observation } from "./observations";
   import * as d from "./diagram";
@@ -11,6 +14,12 @@
   import { onMount } from "svelte";
 
   const diagramScale = 500;
+  // prettier-ignore
+  const diagramTransform: Matrix = [
+    diagramScale, 0,             0,
+    0,            -diagramScale, 0,
+    0,            0,             1,
+  ];
   const debug = false;
 
   let shape = tweened(0, {
@@ -89,18 +98,27 @@
 
   $: earth = d.computeParameters($shape);
 
+  function lineSegmentPath(start: Vector, end: Vector): string {
+    const sT = vTransform(diagramTransform, start);
+    const eT = vTransform(diagramTransform, end);
+    return [`M ${sT[0]} ${sT[1]}`, `L ${eT[0]} ${eT[1]}`].join(" ");
+  }
+
   function surfacePath(earth: d.EarthParams): string {
-    const north = d.scale(earth.surfaceAt(90).point, diagramScale);
-    const south = d.scale(earth.surfaceAt(-90).point, diagramScale);
+    const north = earth.surfaceAt(90).point;
+    const south = earth.surfaceAt(-90).point;
 
     if (earth.type === d.FLAT) {
-      return [`M ${north.x} ${north.y}`, `L ${south.x} ${south.y}`].join(" ");
+      return lineSegmentPath(north, south);
     } else {
+      const northT = vTransform(diagramTransform, north);
+      const southT = vTransform(diagramTransform, south);
+
       const r = earth.circleScale * diagramScale;
-      const sweepFlag = earth.curvatureType === d.CONVEX ? 0 : 1;
+      const sweepFlag = earth.curvatureType === d.CONVEX ? 1 : 0;
       return [
-        `M ${north.x} ${north.y}`,
-        `A ${r} ${r} 0 0 ${sweepFlag} ${south.x} ${south.y}`,
+        `M ${northT[0]} ${northT[1]}`,
+        `A ${r} ${r} 0 0 ${sweepFlag} ${southT[0]} ${southT[1]}`,
       ].join(" ");
     }
   }
@@ -113,19 +131,21 @@
   function surfaceTickPath(surf: d.SurfaceAt): string {
     const tickLength = -0.05;
 
-    const point = d.scale(surf.point, diagramScale);
-    const vector = d.scale(surf.normal, tickLength * diagramScale);
-
-    return [`M ${point.x} ${point.y}`, `l ${vector.x} ${vector.y}`].join(" ");
+    return lineSegmentPath(
+      surf.point,
+      vAdd(surf.point, vScale(tickLength, surf.normal))
+    );
   }
 
   function latitudeTextPosition(surf: d.SurfaceAt): string {
     const latitudeTextDistance = -0.1;
 
-    const point = d.scale(surf.point, diagramScale);
-    const vector = d.scale(surf.normal, latitudeTextDistance * diagramScale);
+    const point = vTransform(
+      diagramTransform,
+      vAdd(surf.point, vScale(latitudeTextDistance, surf.normal))
+    );
 
-    return `translate(${point.x + vector.x} ${point.y + vector.y})`;
+    return `translate(${point[0]} ${point[1]})`;
   }
 
   function latitudeText(latitude: number): string {
@@ -137,13 +157,13 @@
   }
 
   function observationPath(surf: d.SurfaceAt, obs: Observation): string {
-    const normal = d.rotate(surf.normal, obs.angle - 0.5 * Math.PI);
+    const direction = vRotate(obs.angle - 0.5 * Math.PI, surf.normal);
     const length = 10;
 
-    const point = d.scale(surf.point, diagramScale);
-    const vector = d.scale(normal, length * diagramScale);
-
-    return [`M ${point.x} ${point.y}`, `l ${vector.x} ${vector.y}`].join(" ");
+    return lineSegmentPath(
+      surf.point,
+      vAdd(surf.point, vScale(length, direction))
+    );
   }
 </script>
 
@@ -163,13 +183,13 @@
   {#if debug}
     <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
   {/if}
-  <g transform="scale(1 -1) translate(0 -300)">
+  <g transform="translate(0 300)">
     {#if debug}
       {#if earth.type === d.CURVED}
         <circle
           class="debug"
           cx={0}
-          cy={earth.circleOffset * diagramScale}
+          cy={vTransform(diagramTransform, [0, earth.circleOffset])[1]}
           r={earth.circleScale * diagramScale}
         />
       {/if}
@@ -179,11 +199,7 @@
 
     {#each tickLatitudes as latitude}
       <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
-      <g
-        transform={`${latitudeTextPosition(
-          earth.surfaceAt(latitude)
-        )} scale(1 -1)`}
-      >
+      <g transform={latitudeTextPosition(earth.surfaceAt(latitude))}>
         <text class="latitude">{latitudeText(latitude)}</text>
       </g>
     {/each}
