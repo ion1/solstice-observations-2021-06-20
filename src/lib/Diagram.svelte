@@ -156,6 +156,50 @@
     ].join("");
   }
 
+  const verticalLines = [
+    { id: "tropic-south", label: "Tropic of Capricorn", latitude: -23.4365 },
+    { id: "equator", label: "Equator", latitude: 0 },
+    { id: "tropic-north", label: "Tropic of Cancer", latitude: 23.4365 },
+  ];
+
+  function verticalLinePath(
+    earth: d.EarthParams,
+    latitude: number,
+    pathType: "up" | "down" | "label"
+  ): string {
+    const textDistance = 0.15;
+
+    const surf = earth.surfaceAt(latitude);
+
+    // Limit the length to avoid going beyond the center of the circle.
+    const length =
+      earth.type === d.CURVED &&
+      earth.curvatureType === (pathType === "up" ? d.CONCAVE : d.CONVEX)
+        ? Math.min(10, earth.circleScale)
+        : 10;
+
+    if (pathType === "up") {
+      return lineSegmentPath(
+        surf.point,
+        vAdd(surf.point, vScale(length, surf.normal))
+      );
+    } else if (pathType === "down") {
+      return lineSegmentPath(
+        surf.point,
+        vAdd(surf.point, vScale(-length, surf.normal))
+      );
+    } else if (pathType === "label") {
+      // Start at the far end, end a bit before reaching the ground.
+      return lineSegmentPath(
+        vAdd(surf.point, vScale(-length, surf.normal)),
+        vAdd(surf.point, vScale(-textDistance, surf.normal))
+      );
+    } else {
+      const impossible: never = pathType;
+      throw new Error(`Impossible path type: ${impossible}`);
+    }
+  }
+
   function observationPath(surf: d.SurfaceAt, obs: Observation): string {
     const direction = vRotate(obs.angle - 0.5 * Math.PI, surf.normal);
     const length = 10;
@@ -202,6 +246,31 @@
       <g transform={latitudeTextPosition(earth.surfaceAt(latitude))}>
         <text class="latitude">{latitudeText(latitude)}</text>
       </g>
+    {/each}
+
+    {#each verticalLines as line}
+      <!--
+        Draw a line down and a line up separately so their dash pattern starts
+        from the ground.
+      -->
+      <path
+        class="vertical-line"
+        d={verticalLinePath(earth, line.latitude, "down")}
+      />
+      <path
+        class="vertical-line"
+        d={verticalLinePath(earth, line.latitude, "up")}
+      />
+      <path
+        class="vertical-line-text-path"
+        id={`${line.id}-path`}
+        d={verticalLinePath(earth, line.latitude, "label")}
+      />
+      <text class="vertical-line-text" dy="-7.5">
+        <textPath href={`#${line.id}-path`} startOffset="100%">
+          {line.label}
+        </textPath>
+      </text>
     {/each}
 
     {#each observations as obs}
@@ -283,11 +352,31 @@
     stroke-width: 1px;
   }
 
-  .latitude {
+  .latitude,
+  .vertical-line-text {
     font: 17.5px sans-serif;
     fill: var(--foreground-color);
+  }
+
+  .latitude {
     text-anchor: middle;
     dominant-baseline: middle;
+  }
+
+  .vertical-line {
+    stroke-width: 0.25px;
+
+    --dash-size: 5px;
+    stroke-dasharray: var(--dash-size);
+    stroke-dashoffset: calc(var(--dash-size) / 2);
+  }
+
+  .vertical-line-text-path {
+    stroke: none;
+  }
+
+  .vertical-line-text {
+    text-anchor: end;
   }
 
   .observation {
