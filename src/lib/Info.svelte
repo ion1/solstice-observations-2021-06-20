@@ -44,6 +44,7 @@
   function handleKeyDown(event: KeyboardEvent): void {
     if ($infoModal && event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
       hideModal();
     }
   }
