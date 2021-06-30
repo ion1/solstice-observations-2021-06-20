@@ -4,13 +4,15 @@
   import { tweened } from "svelte/motion";
   import { cubicOut as easing } from "svelte/easing";
 
+  import SvgDragPanZoom from "./SvgDragPanZoom.svelte";
+  import type { Motion } from "./SvgDragPanZoom.svelte";
+
   import type { Matrix, Vector } from "vec-la-fp";
   import { vAdd, vRotate, vScale, vTransform } from "vec-la-fp";
 
   import observations from "./observations";
   import type { Observation } from "./observations";
   import * as d from "./diagram";
-  import draggableSvg from "./draggableSvg";
   import { onMount } from "svelte";
 
   const diagramScale = 500;
@@ -35,23 +37,8 @@
     showGrabIndicator = true;
   });
   let dragging = false;
-  let shapeBeforeDrag = shapeTarget;
-  let dragOrigin = 0;
   const dragScale = -2 / diagramScale;
   const dragSnapOffset = 0.1;
-
-  function applyDrag(position: number): void {
-    const deltaUnclamped = position - dragOrigin;
-    const delta = clamp(
-      deltaUnclamped,
-      -1.0 / Math.abs(dragScale),
-      1.0 / Math.abs(dragScale)
-    );
-    dragOrigin += deltaUnclamped - delta;
-
-    shapeTarget = dragScale * delta;
-    shape.set(shapeTarget, { duration: 0 });
-  }
 
   function stopMotion() {
     // Set the current value as the target and stop motion.
@@ -63,23 +50,21 @@
     return Math.min(Math.max(n, min), max);
   }
 
-  function handleDragstart(event: CustomEvent<SvgdragstartData>): void {
-    event.preventDefault();
+  function handleDragStart(event: CustomEvent<DOMPoint>): void {
     dragging = true;
     stopMotion();
-    shapeBeforeDrag = shapeTarget;
-    dragOrigin = event.detail.position.y - shapeTarget / dragScale;
   }
 
-  function handleDragmove(event: CustomEvent<SvgdragmoveData>): void {
+  function handleDragMove(event: CustomEvent<Motion>): void {
     showGrabIndicator = false;
 
-    applyDrag(event.detail.position.y);
+    const delta = event.detail.delta.y;
+    shapeTarget = clamp(shapeTarget + dragScale * delta, -1, 1);
+    shape.set(shapeTarget, { duration: 0 });
   }
 
-  function handleDragend(event: CustomEvent<SvgdragendData>): void {
+  function handleDragEnd(event: CustomEvent<DOMPoint>): void {
     dragging = false;
-    applyDrag(event.detail.position.y);
 
     if (Math.abs(shapeTarget) < dragSnapOffset) {
       shapeTarget = 0;
@@ -90,10 +75,12 @@
     }
   }
 
-  function handleDragcancel(event: CustomEvent<SvgdragcancelData>): void {
+  function handlePanZoomStart(): void {
+    dragging = true;
+  }
+
+  function handlePanZoomEnd(): void {
     dragging = false;
-    shapeTarget = shapeBeforeDrag;
-    shape.set(shapeTarget);
   }
 
   $: earth = d.computeParameters($shape);
@@ -211,77 +198,80 @@
   }
 </script>
 
-<svg
-  viewBox="-600 -600 1200 1200"
-  preserveAspectRatio="xMidYMax meet"
-  use:draggableSvg
-  on:svgdragstart={handleDragstart}
-  on:svgdragmove={handleDragmove}
-  on:svgdragend={handleDragend}
-  on:svgdragcancel={handleDragcancel}
+<div
   class="diagram"
   class:loading={!loaded}
   class:draggable={loaded}
   class:dragging
 >
-  {#if debug}
-    <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
-  {/if}
-  <g transform="translate(0 300)">
+  <SvgDragPanZoom
+    viewBox="-600 -600 1200 1200"
+    preserveAspectRatio="xMidYMax meet"
+    on:dragstart={handleDragStart}
+    on:dragmove={handleDragMove}
+    on:dragend={handleDragEnd}
+    on:panzoomstart={handlePanZoomStart}
+    on:panzoomend={handlePanZoomEnd}
+  >
     {#if debug}
-      {#if earth.type === d.CURVED}
-        <circle
-          class="debug"
-          cx={0}
-          cy={vTransform(diagramTransform, [0, earth.circleOffset])[1]}
-          r={earth.circleScale * diagramScale}
-        />
-      {/if}
+      <path d="M -600 -600 H 600 V 600 H -600 Z" class="debug" />
     {/if}
+    <g transform="translate(0 300)">
+      {#if debug}
+        {#if earth.type === d.CURVED}
+          <circle
+            class="debug"
+            cx={0}
+            cy={vTransform(diagramTransform, [0, earth.circleOffset])[1]}
+            r={earth.circleScale * diagramScale}
+          />
+        {/if}
+      {/if}
 
-    <path class="surface" d={surfacePath(earth)} />
+      <path class="surface" d={surfacePath(earth)} />
 
-    {#each tickLatitudes as latitude}
-      <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
-      <g transform={latitudeTextPosition(earth.surfaceAt(latitude))}>
-        <text class="latitude">{latitudeText(latitude)}</text>
-      </g>
-    {/each}
+      {#each tickLatitudes as latitude}
+        <path class="tick" d={surfaceTickPath(earth.surfaceAt(latitude))} />
+        <g transform={latitudeTextPosition(earth.surfaceAt(latitude))}>
+          <text class="latitude">{latitudeText(latitude)}</text>
+        </g>
+      {/each}
 
-    {#each verticalLines as line}
-      <!--
+      {#each verticalLines as line}
+        <!--
         Draw a line down and a line up separately so their dash pattern starts
         from the ground.
       -->
-      <path
-        class="vertical-line"
-        d={verticalLinePath(earth, line.latitude, "down")}
-      />
-      <path
-        class="vertical-line"
-        d={verticalLinePath(earth, line.latitude, "up")}
-      />
-      <path
-        class="vertical-line-text-path"
-        id={`${line.id}-path`}
-        d={verticalLinePath(earth, line.latitude, "label")}
-      />
-      <text class="vertical-line-text" dy="-7.5">
-        <textPath href={`#${line.id}-path`} startOffset="100%">
-          {line.label}
-        </textPath>
-      </text>
-    {/each}
+        <path
+          class="vertical-line"
+          d={verticalLinePath(earth, line.latitude, "down")}
+        />
+        <path
+          class="vertical-line"
+          d={verticalLinePath(earth, line.latitude, "up")}
+        />
+        <path
+          class="vertical-line-text-path"
+          id={`${line.id}-path`}
+          d={verticalLinePath(earth, line.latitude, "label")}
+        />
+        <text class="vertical-line-text" dy="-7.5">
+          <textPath href={`#${line.id}-path`} startOffset="100%">
+            {line.label}
+          </textPath>
+        </text>
+      {/each}
 
-    {#each observations as obs}
-      <path
-        class="observation"
-        d={observationPath(earth.surfaceAt(obs.latitude), obs)}
-        stroke-opacity={Math.exp(-0.8 * ((obs.error / Math.PI) * 180 - 0.1))}
-      />
-    {/each}
-  </g>
-</svg>
+      {#each observations as obs}
+        <path
+          class="observation"
+          d={observationPath(earth.surfaceAt(obs.latitude), obs)}
+          stroke-opacity={Math.exp(-0.8 * ((obs.error / Math.PI) * 180 - 0.1))}
+        />
+      {/each}
+    </g>
+  </SvgDragPanZoom>
+</div>
 
 {#if showGrabIndicator}
   <div class="grab-indicator" transition:fade>
@@ -290,7 +280,7 @@
 {/if}
 
 <style>
-  .diagram {
+  .diagram > :global(svg) {
     position: absolute;
     left: 0;
     top: 0;
@@ -311,29 +301,21 @@
     align-items: center;
   }
 
-  svg {
-    overflow: visible;
-    width: 100%;
-    height: 100%;
-    touch-action: none;
-  }
-
-  .loading {
+  .loading > :global(svg) {
     cursor: progress;
   }
 
-  .draggable {
+  .draggable > :global(svg) {
     cursor: move;
     cursor: grab;
   }
 
-  .dragging {
+  .dragging > :global(svg) {
     cursor: grabbing;
   }
 
-  svg * {
+  .diagram * {
     vector-effect: non-scaling-stroke;
-    touch-action: none;
   }
 
   text {

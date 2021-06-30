@@ -3,7 +3,10 @@ module.exports = {
   parser: "@typescript-eslint/parser",
   extends: [
     "eslint:recommended",
+    "plugin:jest/recommended",
+    "plugin:jest/style",
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
     "prettier",
   ],
   plugins: ["svelte3", "@typescript-eslint"],
