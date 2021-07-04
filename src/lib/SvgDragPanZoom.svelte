@@ -12,6 +12,7 @@
   import { cubicOut as easing } from "svelte/easing";
 
   import { scaleRotate } from "./scaleRotate";
+  import { clamp } from "./utilities";
 
   const dispatch = createEventDispatcher<{
     dragstart: DOMPoint;
@@ -26,6 +27,8 @@
 
   export let viewBox: string;
   export let preserveAspectRatio: string;
+  export let zoomRange: number = 100;
+  export let panRange: number = 10000;
 
   let svgInvScaleTarget = 1;
   let svgRotationTarget = 0;
@@ -86,7 +89,8 @@
       svgMatrix.f,
     ];
 
-    svgInvScaleTarget = 1 / Math.sqrt(a * a + b * b);
+    const scale = Math.sqrt(a * a + b * b);
+    svgInvScaleTarget = 1 / clamp(scale, 1 / zoomRange, zoomRange);
     svgRotationTarget = Math.atan2(b, a);
 
     // Since we are applying translation before scaling and rotation,
@@ -106,8 +110,10 @@
     // [1 0 | (de-fc)/(ad-bc)]
     // [0 1 | (af-be)/(ad-bc)]
 
-    svgTranslateXTarget = (d * e - f * c) / (a * d - b * c);
-    svgTranslateYTarget = (a * f - b * e) / (a * d - b * c);
+    const x = (d * e - f * c) / (a * d - b * c);
+    const y = (a * f - b * e) / (a * d - b * c);
+    svgTranslateXTarget = clamp(x, -panRange, panRange);
+    svgTranslateYTarget = clamp(y, -panRange, panRange);
 
     svgInvScale.set(svgInvScaleTarget);
     svgRotation.set(svgRotationTarget);

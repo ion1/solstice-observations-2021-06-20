@@ -13,6 +13,7 @@
   import observations from "./observations";
   import type { Observation } from "./observations";
   import * as d from "./diagram";
+  import { clamp } from "./utilities";
   import { onMount } from "svelte";
 
   const diagramScale = 500;
@@ -44,10 +45,6 @@
     // Set the current value as the target and stop motion.
     shapeTarget = $shape;
     shape.set(shapeTarget, { duration: 0 });
-  }
-
-  function clamp(n: number, min: number, max: number): number {
-    return Math.min(Math.max(n, min), max);
   }
 
   function handleDragStart(event: CustomEvent<DOMPoint>): void {
