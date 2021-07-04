@@ -157,6 +157,10 @@
     buttonMap: Map<number, number>;
     posMap: Map<number, { pos: DOMPoint; prevPos: DOMPoint }>;
 
+    // If the user moved the mouse while holding down the right mouse button,
+    // prevent the context menu from opening.
+    movedPointerWhilePanning: boolean;
+
     state: State;
 
     states: {
@@ -169,6 +173,8 @@
     constructor() {
       this.buttonMap = new Map();
       this.posMap = new Map();
+
+      this.movedPointerWhilePanning = false;
 
       this.states = {
         idle: {
@@ -199,6 +205,8 @@
           name: "panning",
           enter: () => {
             dispatch("panzoomstart");
+
+            this.movedPointerWhilePanning = false;
           },
           exit: () => {
             dispatch("panzoomend");
@@ -212,6 +220,8 @@
               svgMot.delta.y
             );
             updateTransform(translate);
+
+            this.movedPointerWhilePanning = true;
           },
         },
         pinching: {
@@ -265,6 +275,7 @@
         this.state.exit();
         this.buttonMap = undefined;
         this.posMap = undefined;
+        this.movedPointerWhilePanning = false;
         this.state = undefined;
         this.states = undefined;
       });
@@ -294,6 +305,13 @@
         .preMultiplySelf(scale)
         .preMultiplySelf(translateToOrigin.inverse());
       updateTransform(matrix);
+    }
+
+    contextmenu(event: MouseEvent): void {
+      if (this.movedPointerWhilePanning) {
+        event.preventDefault();
+        this.movedPointerWhilePanning = false;
+      }
     }
 
     /**
@@ -422,6 +440,8 @@
   const handlePointerCancel = (event: PointerEvent) => stateMachine.up(event);
   const handlePointerMove = (event: PointerEvent) => stateMachine.move(event);
   const handleWheel = (event: WheelEvent) => stateMachine.wheel(event);
+  const handleContextMenu = (event: MouseEvent) =>
+    stateMachine.contextmenu(event);
 </script>
 
 <svg
@@ -434,6 +454,7 @@
   on:pointercancel|capture|preventDefault|stopPropagation={handlePointerCancel}
   on:pointermove|capture|preventDefault|stopPropagation={handlePointerMove}
   on:wheel|nonpassive|capture|preventDefault|stopPropagation={handleWheel}
+  on:contextmenu|capture={handleContextMenu}
 >
   <g bind:this={transformNode} transform={transformAttr}>
     <slot />
